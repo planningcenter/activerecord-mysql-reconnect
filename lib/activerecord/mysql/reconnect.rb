@@ -25,6 +25,7 @@ module Activerecord::Mysql::Reconnect
   WITHOUT_RETRY_KEY = 'activerecord-mysql-reconnect-without-retry'
 
   HANDLE_ERROR = [
+    ActiveRecord::ConnectionNotEstablished,
     ActiveRecord::StatementInvalid,
     Mysql2::Error,
   ]
