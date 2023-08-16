@@ -113,14 +113,8 @@ describe 'activerecord-mysql-reconnect' do
 
       specify do
         th = thread_start {
-          emp = Employee.create(
-            :emp_no     => 9999,
-            :birth_date => Time.now,
-            # wait 10 sec
-            :first_name => "' + sleep(10) + '",
-            :last_name  => 'Tiger',
-            :hire_date  => Time.now
-          )
+          id = ActiveRecord::Base.connection.insert("insert into employees (emp_no, birth_date, hire_date, first_name, last_name) values (sleep(10) + 9998, '2000-01-01', '2023-08-16', 'Daniel', 'Tiger')", returning: 'id')
+          emp = Employee.find(id)
 
           expect(emp.id).to eq 1001
           expect(emp.emp_no).to eq 9999
