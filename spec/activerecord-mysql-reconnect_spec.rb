@@ -60,7 +60,7 @@ describe 'activerecord-mysql-reconnect' do
   context 'wehn select on other thread' do
     specify do
       th = thread_start {
-        expect(Employee.where(:id => 1).pluck('sleep(10) * 0 + 3')).to eq [3]
+        expect(Employee.where(:id => 1).pluck(Arel.sql('sleep(10) * 0 + 3'))).to eq [3]
       }
 
       MysqlServer.restart
