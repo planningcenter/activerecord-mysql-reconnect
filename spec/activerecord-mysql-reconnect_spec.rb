@@ -49,7 +49,7 @@ describe 'activerecord-mysql-reconnect' do
     end
   end
 
-  context 'when count on same thead' do
+  context 'when count on same thread' do
     specify do
       expect(Employee.count).to eq 1000
       MysqlServer.restart
@@ -57,7 +57,7 @@ describe 'activerecord-mysql-reconnect' do
     end
   end
 
-  context 'wehn select on other thread' do
+  context 'when select on other thread' do
     specify do
       th = thread_start {
         expect(Employee.where(:id => 1).pluck(Arel.sql('sleep(10) * 0 + 3'))).to eq [3]
