@@ -208,6 +208,9 @@ describe 'activerecord-mysql-reconnect' do
 
         MysqlServer.restart
 
+        # record is lost
+        expect { emp.reload }.to raise_error(ActiveRecord::RecordNotFound)
+
         emp = Employee.create(
           :emp_no     => 9998,
           :birth_date => Time.now,
@@ -217,7 +220,8 @@ describe 'activerecord-mysql-reconnect' do
         )
 
         # NOTE: Ignore the transaction on :rw mode
-        expect(emp.id).to eq 1001
+
+        expect(emp.id).to eq 1002 # auto_increment still goes up
         expect(emp.emp_no).to eq 9998
       end
 
