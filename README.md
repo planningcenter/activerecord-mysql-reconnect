@@ -1,9 +1,8 @@
 # activerecord-mysql-reconnect
 
-It is the library to reconnect automatically when ActiveRecord is disconnected from MySQL.
+Reconnect automatically when ActiveRecord is disconnected from MySQL. Supports Rails 7+ and MySQL 8.
 
-[![Gem Version](https://badge.fury.io/rb/activerecord-mysql-reconnect.svg)](http://badge.fury.io/rb/activerecord-mysql-reconnect)
-[![Build Status](https://travis-ci.org/winebarrel/activerecord-mysql-reconnect.svg?branch=master)](https://travis-ci.org/winebarrel/activerecord-mysql-reconnect)
+[![Specs](https://github.com/planningcenter/activerecord-mysql-reconnect/actions/workflows/specs.yml/badge.svg)](https://github.com/planningcenter/activerecord-mysql-reconnect/actions/workflows/specs.yml)
 
 ## Installation
 
