@@ -4,6 +4,7 @@
 - Change: Drop support for older versions
 - Chore: Test against MySQL 8
 - Fix: Handle ActiveRecord::ConnectionNotEstablished errors too
+- Fix: Do not retry on ActiveRecord::StatementTimeout errors
 
 ## 0.5.0 (Jan 29, 2020)
 

@@ -31,6 +31,10 @@ module Activerecord::Mysql::Reconnect
     Mysql2::Error,
   ]
 
+  DO_NOT_HANDLE_ERROR = [
+    ActiveRecord::StatementTimeout
+  ]
+
   @@handle_r_error_messages = {
     lost_connection: 'Lost connection to MySQL server during query',
   }
@@ -202,6 +206,10 @@ module Activerecord::Mysql::Reconnect
       end
 
       unless HANDLE_ERROR.any? {|i| e.kind_of?(i) }
+        return false
+      end
+
+      if DO_NOT_HANDLE_ERROR.any? { |i| e.kind_of?(i) }
         return false
       end
 

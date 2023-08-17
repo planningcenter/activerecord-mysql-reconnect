@@ -497,6 +497,15 @@ describe 'activerecord-mysql-reconnect' do
     end
   end
 
+  context "when statement execution time is exceeded" do
+    it "does not retry" do
+      expect(ActiveRecord::Base.logger).not_to receive(:warn)
+      expect {
+        Employee.connection.select_all("SELECT /*+ MAX_EXECUTION_TIME(1) */ * FROM employees where emp_no > sleep(1)")
+      }.to raise_error(ActiveRecord::StatementTimeout)
+    end
+  end
+
   # NOTE: The following test need to execute at the last
   context "when the custom error is happened" do
     before do
