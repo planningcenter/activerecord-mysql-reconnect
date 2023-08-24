@@ -1,4 +1,4 @@
-## 1.0.0 (unreleased)
+## 1.0.0 (Aug 24, 2023)
 
 - Feature: Add support for Rails 7
 - Change: Drop support for older versions
