@@ -18,8 +18,10 @@ Gem::Specification.new do |spec|
   spec.test_files    = spec.files.grep(%r{^(test|spec|features)/})
   spec.require_paths = ['lib']
 
-  # '~> 4.2.6'
-  spec.add_dependency 'activerecord'
+  # We are going to stop using this in Rails 7.1 and beyond in favor of newly
+  # added reconnect / retry functionality. The Platform team will provide
+  # instructions for replacing this gem once 7.1 is released.
+  spec.add_dependency 'activerecord', '~> 7.0.0'
   spec.add_dependency 'mysql2'
   spec.add_development_dependency 'bundler'
   spec.add_development_dependency 'rake'

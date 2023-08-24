@@ -26,8 +26,13 @@ module Activerecord::Mysql::Reconnect
 
   HANDLE_ERROR = [
     ActiveRecord::ConnectionNotEstablished,
+    ActiveRecord::DatabaseConnectionError,
     ActiveRecord::StatementInvalid,
     Mysql2::Error,
+  ]
+
+  DO_NOT_HANDLE_ERROR = [
+    ActiveRecord::StatementTimeout
   ]
 
   @@handle_r_error_messages = {
@@ -47,6 +52,7 @@ module Activerecord::Mysql::Reconnect
     lost_connection: "Lost connection to MySQL server at 'reading initial communication packet'",
     not_connected: "MySQL client is not connected",
     killed: 'Connection was killed',
+    issue_connecting: 'There is an issue connecting with your hostname',
   }
 
   READ_SQL_REGEXP = /\A\s*(?:SELECT|SHOW|SET)\b/i
@@ -200,6 +206,10 @@ module Activerecord::Mysql::Reconnect
       end
 
       unless HANDLE_ERROR.any? {|i| e.kind_of?(i) }
+        return false
+      end
+
+      if DO_NOT_HANDLE_ERROR.any? { |i| e.kind_of?(i) }
         return false
       end
 

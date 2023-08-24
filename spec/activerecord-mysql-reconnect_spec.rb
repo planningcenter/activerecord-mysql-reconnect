@@ -49,7 +49,7 @@ describe 'activerecord-mysql-reconnect' do
     end
   end
 
-  context 'when count on same thead' do
+  context 'when count on same thread' do
     specify do
       expect(Employee.count).to eq 1000
       MysqlServer.restart
@@ -57,10 +57,10 @@ describe 'activerecord-mysql-reconnect' do
     end
   end
 
-  context 'wehn select on other thread' do
+  context 'when select on other thread' do
     specify do
       th = thread_start {
-        expect(Employee.where(:id => 1).pluck('sleep(10) * 0 + 3')).to eq [3]
+        expect(Employee.where(:id => 1).pluck(Arel.sql('sleep(10) * 0 + 3'))).to eq [3]
       }
 
       MysqlServer.restart
@@ -113,14 +113,8 @@ describe 'activerecord-mysql-reconnect' do
 
       specify do
         th = thread_start {
-          emp = Employee.create(
-            :emp_no     => 9999,
-            :birth_date => Time.now,
-            # wait 10 sec
-            :first_name => "' + sleep(10) + '",
-            :last_name  => 'Tiger',
-            :hire_date  => Time.now
-          )
+          id = ActiveRecord::Base.connection.insert("insert into employees (emp_no, birth_date, hire_date, first_name, last_name) values (sleep(10) + 9998, '2000-01-01', '2023-08-16', 'Daniel', 'Tiger')", returning: 'id')
+          emp = Employee.find(id)
 
           expect(emp.id).to eq 1001
           expect(emp.emp_no).to eq 9999
@@ -214,6 +208,9 @@ describe 'activerecord-mysql-reconnect' do
 
         MysqlServer.restart
 
+        # record is lost
+        expect { emp.reload }.to raise_error(ActiveRecord::RecordNotFound)
+
         emp = Employee.create(
           :emp_no     => 9998,
           :birth_date => Time.now,
@@ -223,7 +220,8 @@ describe 'activerecord-mysql-reconnect' do
         )
 
         # NOTE: Ignore the transaction on :rw mode
-        expect(emp.id).to eq 1001
+
+        expect(emp.id).to eq 1002 # auto_increment still goes up
         expect(emp.emp_no).to eq 9998
       end
 
@@ -451,39 +449,29 @@ describe 'activerecord-mysql-reconnect' do
       "%s (cause: %s, sql: SELECT `employees`.* FROM `employees`, connection: host=127.0.0.1;database=employees;username=root)"
     end
 
-    let(:mysql_error) do
-      Mysql2::Error.const_defined?(:ConnectionError) ? Mysql2::Error::ConnectionError : Mysql2::Error
-    end
-
     before do
-      allow_any_instance_of(mysql_error).to receive(:message).and_return('Lost connection to MySQL server during query')
+      allow_any_instance_of(Mysql2::Error::ConnectionError).to receive(:message).and_return('Lost connection to MySQL server during query')
+      allow_any_instance_of(ActiveRecord::StatementInvalid).to receive(:message).and_return('Lost connection to MySQL server during query')
+      allow_any_instance_of(ActiveRecord::DatabaseConnectionError).to receive(:message).and_return('Lost connection to MySQL server during query')
     end
 
     context "when retry failed " do
       specify do
-        if ActiveRecord::VERSION::MAJOR < 6
-          expect(ActiveRecord::Base.logger).to receive(:warn).with(warning_template % [
-            "MySQL server has gone away. Trying to reconnect in 0.5 seconds.",
-            "#{mysql_error}: Lost connection to MySQL server during query: SELECT `employees`.* FROM `employees` [ActiveRecord::StatementInvalid]",
-          ])
-        else
-          expect(ActiveRecord::Base.logger).to receive(:warn).with(warning_template % [
-            "MySQL server has gone away. Trying to reconnect in 0.5 seconds.",
-            "#{mysql_error}: Lost connection to MySQL server during query [ActiveRecord::StatementInvalid]",
-          ])
-        end
-
+        expect(ActiveRecord::Base.logger).to receive(:warn).with(warning_template % [
+          "MySQL server has gone away. Trying to reconnect in 0.5 seconds.",
+          "Lost connection to MySQL server during query [ActiveRecord::StatementInvalid]",
+        ])
 
         (1.0..4.5).step(0.5).each do |sec|
           expect(ActiveRecord::Base.logger).to receive(:warn).with(warning_template % [
             "MySQL server has gone away. Trying to reconnect in #{sec} seconds.",
-            "Lost connection to MySQL server during query [#{mysql_error}]",
+            "Lost connection to MySQL server during query [ActiveRecord::DatabaseConnectionError]",
           ])
         end
 
         expect(ActiveRecord::Base.logger).to receive(:warn).with(warning_template % [
           "Query retry failed.",
-          "Lost connection to MySQL server during query [#{mysql_error}]",
+          "Lost connection to MySQL server during query [ActiveRecord::DatabaseConnectionError]",
         ])
 
         expect(Employee.all.length).to eq 1000
@@ -491,28 +479,30 @@ describe 'activerecord-mysql-reconnect' do
 
         expect {
           Employee.all.length
-        }.to raise_error(mysql_error)
+        }.to raise_error(ActiveRecord::DatabaseConnectionError)
       end
     end
 
     context "when retry succeeded" do
       specify do
-        if ActiveRecord::VERSION::MAJOR < 6
-          expect(ActiveRecord::Base.logger).to receive(:warn).with(warning_template % [
-            "MySQL server has gone away. Trying to reconnect in 0.5 seconds.",
-            "#{mysql_error}: Lost connection to MySQL server during query: SELECT `employees`.* FROM `employees` [ActiveRecord::StatementInvalid]",
-          ])
-        else
-          expect(ActiveRecord::Base.logger).to receive(:warn).with(warning_template % [
-            "MySQL server has gone away. Trying to reconnect in 0.5 seconds.",
-            "#{mysql_error}: Lost connection to MySQL server during query [ActiveRecord::StatementInvalid]",
-          ])
-        end
+        expect(ActiveRecord::Base.logger).to receive(:warn).with(warning_template % [
+          "MySQL server has gone away. Trying to reconnect in 0.5 seconds.",
+          "Lost connection to MySQL server during query [ActiveRecord::StatementInvalid]",
+        ])
 
         expect(Employee.all.length).to eq 1000
         MysqlServer.restart
         expect(Employee.all.length).to eq 1000
       end
+    end
+  end
+
+  context "when statement execution time is exceeded" do
+    it "does not retry" do
+      expect(ActiveRecord::Base.logger).not_to receive(:warn)
+      expect {
+        Employee.connection.select_all("SELECT /*+ MAX_EXECUTION_TIME(1) */ * FROM employees where emp_no > sleep(1)")
+      }.to raise_error(ActiveRecord::StatementTimeout)
     end
   end
 
