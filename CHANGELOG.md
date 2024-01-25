@@ -1,3 +1,7 @@
+## 1.0.1 (Jan 25, 2024)
+
+- Fix: Do not retry on ActiveRecord::QueryCanceled errors
+
 ## 1.0.0 (Aug 24, 2023)
 
 - Feature: Add support for Rails 7
