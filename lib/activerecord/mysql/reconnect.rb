@@ -32,7 +32,8 @@ module Activerecord::Mysql::Reconnect
   ]
 
   DO_NOT_HANDLE_ERROR = [
-    ActiveRecord::StatementTimeout
+    ActiveRecord::StatementTimeout,
+    ActiveRecord::QueryCanceled
   ]
 
   @@handle_r_error_messages = {
