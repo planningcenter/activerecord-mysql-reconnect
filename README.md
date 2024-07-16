@@ -1,6 +1,9 @@
 # activerecord-mysql-reconnect
 
-Reconnect automatically when ActiveRecord is disconnected from MySQL. Supports Rails 7+ and MySQL 8.
+Reconnect automatically when ActiveRecord is disconnected from MySQL. Supports Rails 7.0 and MySQL 8.
+
+**NOTE: This gem has been superseded by [activerecord-retry-reads](https://github.com/planningcenter/activerecord-retry-reads) for
+Rails 7.1 and beyond.**
 
 [![Specs](https://github.com/planningcenter/activerecord-mysql-reconnect/actions/workflows/specs.yml/badge.svg)](https://github.com/planningcenter/activerecord-mysql-reconnect/actions/workflows/specs.yml)
 
